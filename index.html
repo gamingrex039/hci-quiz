@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HCI Interactive Master Quiz</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card-bg: #1e293b;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --border-color: #334155;
+      --primary: #3b82f6;
+      --primary-hover: #2563eb;
+      --success: #10b981;
+      --danger: #ef4444;
+    }
+    @media (prefers-color-scheme: light) {
+      :root {
+        --bg: #f8fafc;
+        --card-bg: #ffffff;
+        --text-main: #0f172a;
+        --text-muted: #64748b;
+        --border-color: #e2e8f0;
+        --primary: #2563eb;
+        --primary-hover: #1d4ed8;
+      }
+    }
+    body {
+      background-color: var(--bg);
+      color: var(--text-main);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+    /* Fallback basic styles if CDN doesn't load offline */
+    button { cursor: pointer; }
+    select, input, button { font-family: inherit; }
+  </style>
+</head>
+<body class="p-4 md:p-6 antialiased min-h-screen">
+
+  <div class="max-w-4xl mx-auto">
+    <!-- Header -->
+    <header class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b pb-5" style="border-color: var(--border-color);">
+      <div>
+        <div class="inline-flex items-center gap-2 px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-500/10 text-blue-400 mb-2">
+          <span>🎓</span> NPTEL / HCI Complete Course
+        </div>
+        <h1 class="text-2xl sm:text-3xl font-bold tracking-tight">HCI Master Quiz App</h1>
+        <p class="text-sm text-slate-400 mt-1">120 Questions across Weeks 1 – 12 • Practice & Test Modes</p>
+      </div>
+      <div class="flex items-center gap-2">
+        <button id="resetBtn" class="px-3.5 py-1.5 text-xs font-medium rounded-lg border hover:bg-slate-800 transition" style="border-color: var(--border-color);">
+          🔄 Reset Quiz
+        </button>
+        <button id="toggleReviewBtn" class="px-3.5 py-1.5 text-xs font-medium rounded-lg bg-blue-600 text-white hover:bg-blue-500 transition shadow-sm">
+          📋 Summary Key
+        </button>
+      </div>
+    </header>
+
+    <!-- Controls Bar -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6 p-4 rounded-xl border" style="background-color: var(--card-bg); border-color: var(--border-color);">
+      <div>
+        <label class="block text-xs font-medium text-slate-400 mb-1">Select Module / Week</label>
+        <select id="weekFilter" class="w-full text-sm rounded-lg p-2 bg-slate-900 border focus:ring-2 focus:ring-blue-500 text-slate-200" style="border-color: var(--border-color);">
+          <option value="all">All Weeks (120 Questions)</option>
+          <option value="1">Week 1: Intro to HCI & Good Design</option>
+          <option value="2">Week 2: UX, Accessibility & Roles</option>
+          <option value="3">Week 3: Design Thinking & Double Diamond</option>
+          <option value="4">Week 4: User Perspectives & Personas</option>
+          <option value="5">Week 5: Interaction Types & Metaphors</option>
+          <option value="6">Week 6: Research Methods & Data Analysis</option>
+          <option value="7">Week 7: Prototyping & Storyboards</option>
+          <option value="8">Week 8: Usability Evaluation & Metrics</option>
+          <option value="9">Week 9: IoT, Wearables & Novel Interfaces</option>
+          <option value="10">Week 10: LLMs, Prompting & Human-AI</option>
+          <option value="11">Week 11: Privacy, Security & Ethics</option>
+          <option value="12">Week 12: Conversational AI & Dialogue Systems</option>
+        </select>
+      </div>
+
+      <div>
+        <label class="block text-xs font-medium text-slate-400 mb-1">Quiz Mode</label>
+        <select id="modeSelect" class="w-full text-sm rounded-lg p-2 bg-slate-900 border focus:ring-2 focus:ring-blue-500 text-slate-200" style="border-color: var(--border-color);">
+          <option value="practice">Practice Mode (Instant Feedback)</option>
+          <option value="test">Exam Mode (Submit at End)</option>
+        </select>
+      </div>
+
+      <div>
+        <label class="block text-xs font-medium text-slate-400 mb-1">Quick Search / Topic</label>
+        <input type="text" id="searchInput" placeholder="e.g. Norman, GDPR, Prototyping..." class="w-full text-sm rounded-lg p-2 bg-slate-900 border focus:ring-2 focus:ring-blue-500 text-slate-200 placeholder-slate-500" style="border-color: var(--border-color);">
+      </div>
+    </div>
+
+    <!-- Stats & Progress -->
+    <div class="flex items-center justify-between text-xs text-slate-400 mb-2">
+      <span id="progressText">Question 1 of 120</span>
+      <div class="flex items-center gap-3">
+        <span>Score: <b id="scoreVal" class="text-emerald-400">0</b> / <span id="totalAttempted">0</span></span>
+        <span class="text-blue-400 font-semibold" id="pctVal">(0%)</span>
+      </div>
+    </div>
+    <div class="w-full bg-slate-800 rounded-full h-2 mb-6 overflow-hidden">
+      <div id="progressBar" class="bg-blue-600 h-2 rounded-full transition-all duration-300" style="width: 1%"></div>
+    </div>
+
+    <!-- Question Container -->
+    <main id="quizContainer" class="p-6 rounded-2xl border shadow-lg relative mb-6" style="background-color: var(--card-bg); border-color: var(--border-color);">
+      <!-- Question Header -->
+      <div class="flex items-center justify-between gap-2 mb-3">
+        <span id="badgeWeek" class="text-xs px-2.5 py-0.5 rounded-md font-semibold bg-blue-900/40 text-blue-300 border border-blue-700/50">Week 1</span>
+        <span id="badgeNum" class="text-xs text-slate-400">Q1</span>
+      </div>
+
+      <h2 id="questionText" class="text-lg sm:text-xl font-semibold leading-relaxed mb-6">
+        What does HCI stand for?
+      </h2>
+
+      <!-- Options -->
+      <div id="optionsContainer" class="space-y-3 mb-6">
+        <!-- Injected via JS -->
+      </div>
+
+      <!-- Feedback Banner (Practice Mode) -->
+      <div id="feedbackBanner" class="hidden p-4 rounded-xl text-sm font-medium border mb-6"></div>
+
+      <!-- Navigation Footer -->
+      <div class="flex items-center justify-between pt-4 border-t" style="border-color: var(--border-color);">
+        <button id="prevBtn" class="px-4 py-2 text-sm font-medium rounded-lg border hover:bg-slate-800 disabled:opacity-30 disabled:pointer-events-none transition" style="border-color: var(--border-color);">
+          ← Previous
+        </button>
+
+        <div class="flex gap-2">
+          <button id="showAnswerBtn" class="px-4 py-2 text-sm font-medium rounded-lg border border-amber-500/40 text-amber-400 hover:bg-amber-500/10 transition">
+            💡 Reveal Answer
+          </button>
+          <button id="nextBtn" class="px-5 py-2 text-sm font-medium rounded-lg bg-blue-600 hover:bg-blue-500 text-white transition">
+            Next →
+          </button>
+        </div>
+      </div>
+    </main>
+
+    <!-- Question Palette -->
+    <div class="p-4 rounded-xl border mb-6" style="background-color: var(--card-bg); border-color: var(--border-color);">
+      <div class="flex items-center justify-between mb-3">
+        <h3 class="text-xs font-semibold uppercase tracking-wider text-slate-400">Question Navigator</h3>
+        <div class="flex items-center gap-3 text-xs text-slate-400">
+          <span class="inline-flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span> Correct</span>
+          <span class="inline-flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-red-500"></span> Incorrect</span>
+          <span class="inline-flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-slate-700"></span> Unanswered</span>
+        </div>
+      </div>
+      <div id="questionGrid" class="flex flex-wrap gap-1.5 max-h-44 overflow-y-auto pr-1">
+        <!-- Buttons injected via JS -->
+      </div>
+    </div>
+
+    <!-- Full Answer Key Modal / Section -->
+    <section id="fullKeySection" class="hidden p-6 rounded-2xl border" style="background-color: var(--card-bg); border-color: var(--border-color);">
+      <div class="flex items-center justify-between mb-4 border-b pb-3" style="border-color: var(--border-color);">
+        <h3 class="text-lg font-bold">Comprehensive Answer Key & Reference</h3>
+        <button id="closeKeyBtn" class="text-xs text-slate-400 hover:text-white">✕ Close</button>
+      </div>
+      <div id="keyContent" class="space-y-6 max-h-[500px] overflow-y-auto pr-2 text-sm">
+        <!-- Rendered via JS -->
+      </div>
+    </section>
+
+  </div>
+
+  <script>
+    const questionsData = [
+      // Week 1
+      { week: 1, id: 1, q: "What does HCI stand for?", options: ["Human Computer Integration", "Human Computer Interaction", "High Computer Intelligence", "Human Control Interface"], answer: 1, topic: "Fundamentals of HCI" },
+      { week: 1, id: 2, q: "Which of the following is a key component of HCI?", options: ["User", "Processor speed", "Internet cable", "Battery life"], answer: 0, topic: "Components of HCI" },
+      { week: 1, id: 3, q: "Which is an example of good design?", options: ["Confusing navigation", "Clear push/pull sign on door", "Too many buttons", "No feedback"], answer: 1, topic: "Design Principles" },
+      { week: 1, id: 4, q: "Digital transformation means:", options: ["Converting physical processes into digital systems", "Increasing manual work", "Removing technology", "Using paper forms only"], answer: 0, topic: "Digital Transformation" },
+      { week: 1, id: 5, q: "Which of the following is NOT a usability factor?", options: ["Efficiency", "Memorability", "Network speed", "Satisfaction"], answer: 2, topic: "Usability Attributes" },
+      { week: 1, id: 6, q: "Which principle ensures users understand possible actions?", options: ["Feedback", "Affordance", "Consistency", "Visibility"], answer: 1, topic: "Affordance" },
+      { week: 1, id: 7, q: "Feedback in interaction design means:", options: ["Removing buttons", "System response after user action", "Increasing storage", "Deleting data"], answer: 1, topic: "Feedback" },
+      { week: 1, id: 8, q: "A cluttered interface leads to:", options: ["Better usability", "Faster performance", "User confusion", "Improved satisfaction"], answer: 2, topic: "Visual Hierarchy" },
+      { week: 1, id: 9, q: "Which of the following best describes interaction design (IxD)?", options: ["Designing hardware components", "Designing interactive digital systems and experiences", "Managing databases", "Programming languages"], answer: 1, topic: "Interaction Design Definition" },
+      { week: 1, id: 10, q: "What is the main issue with too many features in an interface?", options: ["Improves usability", "Reduces cost", "Overcomplicates user experience", "Improves performance"], answer: 2, topic: "Feature Creep & Usability" },
+
+      // Week 2
+      { week: 2, id: 1, q: "What does UX focus on in interaction design?", options: ["Only coding", "User's overall experience and satisfaction", "Network speed", "Hardware cost"], answer: 1, topic: "UX Goals" },
+      { week: 2, id: 2, q: "Which of the following is a type of design mentioned?", options: ["Network design", "User interface design", "Cable design", "Processor design"], answer: 1, topic: "Design Disciplines" },
+      { week: 2, id: 3, q: "Inclusivity in design means:", options: ["Designing only for experts", "Designing for diverse users", "Designing for children only", "Designing only for fast users"], answer: 1, topic: "Inclusive Design" },
+      { week: 2, id: 4, q: "Which principle ensures elements are easy to find?", options: ["Feedback", "Visibility", "Consistency", "Flexibility"], answer: 1, topic: "Visibility Principle" },
+      { week: 2, id: 5, q: "Interaction design helps designers to:", options: ["Only reduce cost", "Understand user needs and behaviors", "Increase hardware size", "Remove testing"], answer: 1, topic: "IxD Objectives" },
+      { week: 2, id: 6, q: "Which designer focuses on app structure and navigation?", options: ["UI Designer", "Information Architect", "Motion Designer", "Brand Designer"], answer: 1, topic: "Information Architecture" },
+      { week: 2, id: 7, q: "Which accessibility feature helps visually impaired users?", options: ["Bright colors", "Screen readers", "Animations", "Large storage"], answer: 1, topic: "Accessibility Tools" },
+      { week: 2, id: 8, q: "Which principle helps reduce errors and recover from them?", options: ["Visibility", "Error prevention and recovery", "Feedback", "Flexibility"], answer: 1, topic: "Error Handling" },
+      { week: 2, id: 9, q: "Accessibility mainly focuses on:", options: ["Cultural diversity", "Users with disabilities", "Only performance", "Only UI design"], answer: 1, topic: "Accessibility Definition" },
+      { week: 2, id: 10, q: "What is a key challenge in interaction design teams?", options: ["Lack of ideas", "Difficulty in communication across disciplines", "Too few designers", "No user data"], answer: 1, topic: "Multidisciplinary Teams" },
+
+      // Week 3
+      { week: 3, id: 1, q: "Design Thinking is primarily:", options: ["Hardware optimization", "User-centered problem-solving approach", "Coding framework", "Testing method"], answer: 1, topic: "Design Thinking Definition" },
+      { week: 3, id: 2, q: "Which stage focuses on understanding users?", options: ["Ideate", "Define", "Empathize", "Prototype"], answer: 2, topic: "Design Thinking Stages" },
+      { week: 3, id: 3, q: "Testing phase is used to:", options: ["Design UI", "Validate solutions with users", "Write code", "Deploy system"], answer: 1, topic: "Testing & Validation" },
+      { week: 3, id: 4, q: "Which is a stage in design process?", options: ["Debugging", "Ideation", "Compilation", "Encryption"], answer: 1, topic: "Design Process" },
+      { week: 3, id: 5, q: "In Double Diamond, \"Develop\" phase focuses on:", options: ["Problem definition", "Generating solutions", "Testing only", "Deployment"], answer: 1, topic: "Double Diamond Model" },
+      { week: 3, id: 6, q: "Low-fidelity prototypes are:", options: ["Final products", "Simple sketches or mockups", "High-quality UI", "Deployed apps"], answer: 1, topic: "Low-Fidelity Prototyping" },
+      { week: 3, id: 7, q: "Activity-centered design focuses on:", options: ["Users", "Tasks/activities", "Hardware", "Code"], answer: 1, topic: "Activity-Centered Design" },
+      { week: 3, id: 8, q: "System design includes:", options: ["Only UI", "Architecture and components", "Only testing", "Only UX"], answer: 1, topic: "System Design" },
+      { week: 3, id: 9, q: "In user-centered design, empirical measurement means:", options: ["Guessing user needs", "Observing and analyzing user behavior", "Writing code", "Skipping testing"], answer: 1, topic: "Empirical Measurement" },
+      { week: 3, id: 10, q: "A key challenge in design thinking is:", options: ["Too much user data", "Balancing creativity with constraints", "No iterations", "Lack of tools"], answer: 1, topic: "Design Constraints" },
+
+      // Week 4
+      { week: 4, id: 1, q: "User perspectives in HCI refer to:", options: ["System architecture", "How users perceive and interact with technology", "Coding practices", "Hardware design"], answer: 1, topic: "User Perspective" },
+      { week: 4, id: 2, q: "Accessibility ensures:", options: ["Faster code", "System security", "Usability for all users", "Less cost"], answer: 2, topic: "Accessibility Goals" },
+      { week: 4, id: 3, q: "Novice users prefer:", options: ["Complex shortcuts", "Minimal instructions", "Simple and guided interfaces", "Advanced tools only"], answer: 2, topic: "Novice vs Expert Users" },
+      { week: 4, id: 4, q: "Empathy maps consist of how many quadrants?", options: ["2", "3", "4", "5"], answer: 2, topic: "Empathy Mapping" },
+      { week: 4, id: 5, q: "Which is NOT a key aspect of user perspectives?", options: ["Usability", "Accessibility", "Compilation", "User needs"], answer: 2, topic: "User Perspectives Scope" },
+      { week: 4, id: 6, q: "Personas are mainly created during which phase?", options: ["Test", "Define", "Deploy", "Evaluate"], answer: 1, topic: "User Personas" },
+      { week: 4, id: 7, q: "Which method collects large-scale user data?", options: ["Interviews", "Surveys", "Field study", "Observation"], answer: 1, topic: "User Research Methods" },
+      { week: 4, id: 8, q: "Affinity mapping helps in:", options: ["Coding", "Grouping related data", "UI design", "Deployment"], answer: 1, topic: "Affinity Diagramming" },
+      { week: 4, id: 9, q: "Which is a challenge in understanding user perspectives?", options: ["Lack of tools", "Diverse user needs", "No data", "No users"], answer: 1, topic: "User Diversity" },
+      { week: 4, id: 10, q: "Data synthesis primarily helps in:", options: ["Writing code", "Identifying patterns and insights", "Deployment", "UI rendering"], answer: 1, topic: "Data Synthesis" },
+
+      // Week 5
+      { week: 5, id: 1, q: "In HCI, an interface is:", options: ["A medium through which users and systems communicate", "Only hardware components", "A programming language", "A database system"], answer: 0, topic: "Interface Definition" },
+      { week: 5, id: 2, q: "Interaction in HCI involves:", options: ["Only system processing", "Communication between user and system", "Hardware installation", "Data storage"], answer: 1, topic: "Interaction Concept" },
+      { week: 5, id: 3, q: "Which interaction type is like talking to a system?", options: ["Manipulating", "Exploring", "Responding", "Conversing"], answer: 3, topic: "Interaction Types" },
+      { week: 5, id: 4, q: "Responding interaction is when:", options: ["User starts interaction", "System initiates interaction", "No interaction happens", "Only typing occurs"], answer: 1, topic: "Responding Interaction" },
+      { week: 5, id: 5, q: "A key benefit of conversational interfaces is:", options: ["Faster hardware", "Familiar interaction for users", "Less memory usage", "Better graphics"], answer: 1, topic: "Conversational UI" },
+      { week: 5, id: 6, q: "Direct manipulation was introduced by:", options: ["Donald Norman", "Jakob Nielsen", "Ben Shneiderman", "Alan Dix"], answer: 2, topic: "Direct Manipulation History" },
+      { week: 5, id: 7, q: "A disadvantage of direct manipulation is:", options: ["Difficult for experts", "Can consume screen space", "No interaction", "No visual elements"], answer: 1, topic: "Direct Manipulation Tradeoffs" },
+      { week: 5, id: 8, q: "CLI is mainly suitable for:", options: ["Beginners", "Expert users", "Children only", "Casual users"], answer: 1, topic: "Command Line Interfaces" },
+      { week: 5, id: 9, q: "Paradigms in HCI refer to:", options: ["Coding techniques", "Shared approaches and practices", "UI layouts", "Data structures"], answer: 1, topic: "HCI Paradigms" },
+      { week: 5, id: 10, q: "A major limitation of interface metaphors is:", options: ["Improves usability", "Limits design creativity", "Reduces learning", "Enhances flexibility"], answer: 1, topic: "Interface Metaphors" },
+
+      // Week 6
+      { week: 6, id: 1, q: "Data in HCI is mainly used for:", options: ["Hardware optimization", "Understanding user needs", "Coding interfaces", "Database storage"], answer: 1, topic: "HCI Data Usage" },
+      { week: 6, id: 2, q: "Data requirement means:", options: ["Storing data", "Collecting random data", "Identifying needed data for design", "Visualizing data"], answer: 2, topic: "Data Requirements" },
+      { week: 6, id: 3, q: "Which is a quantitative method?", options: ["Interviews", "Observations", "Surveys", "Focus groups"], answer: 2, topic: "Quantitative Research" },
+      { week: 6, id: 4, q: "Closed-ended questions are:", options: ["Hard to analyze", "Open responses", "Numerical and structured", "Subjective"], answer: 2, topic: "Questionnaire Design" },
+      { week: 6, id: 5, q: "A major issue in focus groups is:", options: ["Lack of data", "Bias due to group dynamics", "Too much structure", "No interaction"], answer: 1, topic: "Focus Groups Pitfalls" },
+      { week: 6, id: 6, q: "Semi-structured interviews:", options: ["Have no questions", "Combine structured and open-ended questions", "Only use MCQs", "Are fully rigid"], answer: 1, topic: "Interviewing Techniques" },
+      { week: 6, id: 7, q: "Between-group design means:", options: ["Same participants test all designs", "Different groups test different designs", "No comparison", "No participants"], answer: 1, topic: "Experimental Design" },
+      { week: 6, id: 8, q: "Capturing data includes:", options: ["Only text", "Only images", "Notes, audio, video", "Only numbers"], answer: 2, topic: "Data Capture Modalities" },
+      { week: 6, id: 9, q: "Mean is:", options: ["Most frequent value", "Middle value", "Average of values", "Range"], answer: 2, topic: "Descriptive Statistics" },
+      { week: 6, id: 10, q: "A common pitfall in data analysis is:", options: ["Using enough data", "Overgeneralization", "Clear visualization", "Correct interpretation"], answer: 1, topic: "Data Analysis Traps" },
+
+      // Week 7
+      { week: 7, id: 1, q: "Prototyping is:", options: ["Coding process", "Testing method", "Experimental process of building prototypes", "Deployment phase"], answer: 2, topic: "Prototyping Definition" },
+      { week: 7, id: 2, q: "High-fidelity prototypes are:", options: ["Sketches", "Rough ideas", "Early drafts", "Close to final product"], answer: 3, topic: "High-Fidelity Prototypes" },
+      { week: 7, id: 3, q: "Storyboards are:", options: ["Databases", "Series of sketches showing user flow", "Code snippets", "UI frameworks"], answer: 1, topic: "Storyboarding" },
+      { week: 7, id: 4, q: "Fidelity refers to:", options: ["Cost", "Code quality", "User satisfaction", "Level of detail"], answer: 3, topic: "Prototype Fidelity" },
+      { week: 7, id: 5, q: "Advantage of prototyping:", options: ["Saves time and cost", "Eliminates testing", "Avoids iteration", "Reduces usability"], answer: 0, topic: "Prototyping Benefits" },
+      { week: 7, id: 6, q: "A drawback of mid-fi prototypes is:", options: ["Too simple", "No interaction", "Users focus on minor details", "No feedback"], answer: 2, topic: "Mid-Fidelity Drawbacks" },
+      { week: 7, id: 7, q: "Wizard-of-Oz technique involves:", options: ["AI system", "Human simulating system response", "Automation", "Coding"], answer: 1, topic: "Wizard-of-Oz" },
+      { week: 7, id: 8, q: "Conceptual design focuses on:", options: ["Colors and fonts", "Final UI", "Core ideas and structure", "Deployment"], answer: 2, topic: "Conceptual Design" },
+      { week: 7, id: 9, q: "Horizontal prototyping focuses on:", options: ["Deep single feature", "Broad system overview", "Code optimization", "Testing only"], answer: 1, topic: "Horizontal vs Vertical" },
+      { week: 7, id: 10, q: "A key principle of prototyping is:", options: ["Avoid iteration", "Build final product directly", "Iterative refinement", "No user feedback"], answer: 2, topic: "Prototyping Principles" },
+
+      // Week 8
+      { week: 8, id: 1, q: "Evaluation in HCI refers to:", options: ["Coding", "Assessing usability and user experience", "Marketing", "Deployment"], answer: 1, topic: "Evaluation Definition" },
+      { week: 8, id: 2, q: "One goal of evaluation is:", options: ["Increase complexity", "Reduce cost", "Identify problems", "Remove users"], answer: 2, topic: "Evaluation Goals" },
+      { week: 8, id: 3, q: "Quantitative data includes:", options: ["User opinions", "Interviews", "Observations", "Task completion time"], answer: 3, topic: "Quantitative Usability Metrics" },
+      { week: 8, id: 4, q: "Think-aloud protocol requires users to:", options: ["Stay silent", "Write code", "Verbalize thoughts", "Fill forms only"], answer: 2, topic: "Think-Aloud Protocol" },
+      { week: 8, id: 5, q: "Formative evaluation is done:", options: ["After deployment", "During design", "Only testing phase", "Maintenance stage"], answer: 1, topic: "Formative Evaluation" },
+      { week: 8, id: 6, q: "Diagnostic evaluation helps to:", options: ["Deploy system", "Identify specific usability issues", "Reduce cost", "Improve hardware"], answer: 1, topic: "Diagnostic Evaluation" },
+      { week: 8, id: 7, q: "In between-group experiments:", options: ["Same users test all systems", "Different groups test different systems", "No users involved", "Only experts involved"], answer: 1, topic: "Between-Subjects Experiments" },
+      { week: 8, id: 8, q: "A key usability metric is:", options: ["Revenue", "Efficiency", "Marketing reach", "Branding"], answer: 1, topic: "Usability Metrics" },
+      { week: 8, id: 9, q: "Heuristic evaluation is done by:", options: ["End users", "Developers", "Experts using usability principles", "Managers"], answer: 2, topic: "Heuristic Evaluation" },
+      { week: 8, id: 10, q: "Error rate refers to:", options: ["System crashes only", "Number of user mistakes", "Network failure", "UI colors"], answer: 1, topic: "Usability Error Rates" },
+
+      // Week 9
+      { week: 9, id: 1, q: "IoT refers to:", options: ["Only internet applications", "Network of connected smart objects", "Software development", "Database systems"], answer: 1, topic: "IoT Fundamentals" },
+      { week: 9, id: 2, q: "HCI in IoT mainly provides:", options: ["Hardware", "Interface layer for interaction", "Sensors", "Power supply"], answer: 1, topic: "HCI in IoT" },
+      { week: 9, id: 3, q: "Touch interfaces are:", options: ["Indirect", "Non-interactive", "Direct interaction methods", "Only for experts"], answer: 2, topic: "Touch Interfaces" },
+      { week: 9, id: 4, q: "IoT devices collect:", options: ["Only images", "Only text", "Contextual data", "Only audio"], answer: 2, topic: "Sensor & Contextual Data" },
+      { week: 9, id: 5, q: "Iterative design means:", options: ["One-time design", "Continuous refinement", "Final product only", "No testing"], answer: 1, topic: "Iterative Refinement" },
+      { week: 9, id: 6, q: "Cognitive overload occurs when:", options: ["Too little data", "Too many options/data overwhelm users", "System is fast", "Interface is simple"], answer: 1, topic: "Cognitive Load" },
+      { week: 9, id: 7, q: "IoT systems rely heavily on:", options: ["Manual work", "Connectivity", "Paper records", "Offline processing"], answer: 1, topic: "Connected Ecosystems" },
+      { week: 9, id: 8, q: "Wearable interfaces are:", options: ["Stationary", "Always accessible and personalized", "Offline", "Non-interactive"], answer: 1, topic: "Wearable Tech" },
+      { week: 9, id: 9, q: "HaptiDrag enhances VR by:", options: ["Visual effects only", "Variable friction feedback", "Audio output", "Network speed"], answer: 1, topic: "Haptic Feedback & VR" },
+      { week: 9, id: 10, q: "In MobiTangibles, magnetic field increases when:", options: ["Distance increases", "Distance decreases", "Time increases", "Voltage decreases"], answer: 1, topic: "Tangible Interfaces" },
+
+      // Week 10
+      { week: 10, id: 1, q: "Large Language Models (LLMs) are mainly used to:", options: ["Store data", "Understand and generate text", "Build hardware", "Manage networks"], answer: 1, topic: "LLMs Basics" },
+      { week: 10, id: 2, q: "Behaviour refers to:", options: ["System performance", "Data processing", "Actions or reactions of individuals", "Software debugging"], answer: 2, topic: "User Behavior Modeling" },
+      { week: 10, id: 3, q: "LLMs improve interfaces by:", options: ["Replacing UI", "Increasing hardware", "Enabling natural language interaction", "Reducing usability"], answer: 2, topic: "Natural Language Interaction" },
+      { week: 10, id: 4, q: "Multimodal LLMs process:", options: ["Only text", "Only images", "Only audio", "Multiple data types (text, image, etc.)"], answer: 3, topic: "Multimodal AI" },
+      { week: 10, id: 5, q: "Zero-shot prompting means:", options: ["Training with no data", "Using examples before prediction", "Asking directly without examples", "Using reinforcement learning"], answer: 2, topic: "Zero-Shot Prompting" },
+      { week: 10, id: 6, q: "Few-shot prompting helps by:", options: ["Increasing latency", "Providing examples to guide the model", "Reducing accuracy", "Removing context"], answer: 1, topic: "Few-Shot Prompting" },
+      { week: 10, id: 7, q: "Adaptive learning systems use:", options: ["Static content", "Fixed curriculum", "Personalized content based on user performance", "Random teaching"], answer: 2, topic: "Adaptive Learning" },
+      { week: 10, id: 8, q: "LLMs contribute to accessibility by:", options: ["Reducing data", "Providing voice and text alternatives", "Increasing complexity", "Removing UI"], answer: 1, topic: "AI & Accessibility" },
+      { week: 10, id: 9, q: "A key challenge in behaviour prediction is:", options: ["Too little data", "Hardware cost", "Deciding what, when, and to whom to show content", "Lack of UI"], answer: 2, topic: "Behavior Prediction Challenges" },
+      { week: 10, id: 10, q: "Ethical concern in LLM + HCI systems:", options: ["Speed", "UI design", "Privacy and manipulation risks", "Storage"], answer: 2, topic: "Ethical AI in HCI" },
+
+      // Week 11
+      { week: 11, id: 1, q: "Privacy in HCI refers to:", options: ["Protecting system hardware", "Controlling personal data by users", "Improving UI speed", "Network optimization"], answer: 1, topic: "Privacy Rights" },
+      { week: 11, id: 2, q: "Security in HCI ensures:", options: ["Better graphics", "Faster systems", "Protection from unauthorized access", "More storage"], answer: 2, topic: "Security Principles" },
+      { week: 11, id: 3, q: "One major harm of LLMs is:", options: ["Faster execution", "Reduced storage", "Bias and discrimination", "Improved UX"], answer: 2, topic: "Algorithmic Bias" },
+      { week: 11, id: 4, q: "Two-factor authentication (2FA) adds:", options: ["Storage", "UI complexity", "Extra security layer", "Speed"], answer: 2, topic: "Authentication Mechanisms" },
+      { week: 11, id: 5, q: "A major deepfake risk is:", options: ["Faster AI", "Better UX", "Misinformation spread", "Reduced cost"], answer: 2, topic: "Deepfake & Misinformation" },
+      { week: 11, id: 6, q: "GDPR impacts HCI by:", options: ["Increasing UI complexity", "Enforcing transparency and consent", "Removing security", "Reducing usability"], answer: 1, topic: "Regulatory Compliance (GDPR)" },
+      { week: 11, id: 7, q: "Dark patterns are:", options: ["Good UI design", "Secure UI", "Interfaces that trick users", "Encryption methods"], answer: 2, topic: "Dark Patterns" },
+      { week: 11, id: 8, q: "SHAP is used for:", options: ["Encryption", "Model explanation", "UI design", "Data storage"], answer: 1, topic: "Explainable AI (XAI)" },
+      { week: 11, id: 9, q: "Zero Trust security model means:", options: ["Trust all users", "Never verify users", "Always verify identity", "No authentication"], answer: 2, topic: "Zero Trust Model" },
+      { week: 11, id: 10, q: "A major usability issue in security systems is:", options: ["Too simple UI", "Lack of data", "High cost", "Complexity for users"], answer: 3, topic: "Usable Security" },
+
+      // Week 12
+      { week: 12, id: 1, q: "A conversational system is defined as:", options: ["A database system", "A system that interacts using natural language", "A networking protocol", "A compiler"], answer: 1, topic: "Conversational Agents" },
+      { week: 12, id: 2, q: "Communication primarily involves:", options: ["Data storage", "Exchange of information", "Coding", "Hardware"], answer: 1, topic: "Communication Theory" },
+      { week: 12, id: 3, q: "NLU in conversational AI refers to:", options: ["Generating images", "Understanding user intent", "Storing data", "Encrypting data"], answer: 1, topic: "Natural Language Understanding" },
+      { week: 12, id: 4, q: "Dialogue management handles:", options: ["Storage", "UI design", "Conversation flow", "Networking"], answer: 2, topic: "Dialogue Management" },
+      { week: 12, id: 5, q: "Noise in communication refers to:", options: ["Clear message", "Interference", "Feedback", "Encoding"], answer: 1, topic: "Communication Noise" },
+      { week: 12, id: 6, q: "Multimodal systems use:", options: ["Single input", "Only text", "Multiple data types", "Only audio"], answer: 2, topic: "Multimodality" },
+      { week: 12, id: 7, q: "Conversational AI improves UX by:", options: ["Increasing delay", "Making interaction natural", "Reducing usability", "Removing UI"], answer: 1, topic: "Conversational UX" },
+      { week: 12, id: 8, q: "In autism AI systems, multimodal analysis includes:", options: ["Only text", "Only video", "Speech, facial, and behavioural data", "Only hardware"], answer: 2, topic: "Assistive AI Systems" },
+      { week: 12, id: 9, q: "A major benefit of conversational AI is:", options: ["Increased complexity", "24/7 availability", "Higher cost", "Reduced interaction"], answer: 1, topic: "Conversational AI Benefits" },
+      { week: 12, id: 10, q: "A limitation of conversational AI systems is:", options: ["No interaction", "Perfect understanding", "Bias and incorrect responses", "No computation"], answer: 2, topic: "Conversational AI Limitations" }
+    ];
+
+    // State
+    let filteredQuestions = [...questionsData];
+    let currentIndex = 0;
+    let userAnswers = {};
+    let currentMode = 'practice';
+
+    // Elements
+    const weekFilter = document.getElementById('weekFilter');
+    const modeSelect = document.getElementById('modeSelect');
+    const searchInput = document.getElementById('searchInput');
+    const progressText = document.getElementById('progressText');
+    const scoreVal = document.getElementById('scoreVal');
+    const totalAttempted = document.getElementById('totalAttempted');
+    const pctVal = document.getElementById('pctVal');
+    const progressBar = document.getElementById('progressBar');
+    const badgeWeek = document.getElementById('badgeWeek');
+    const badgeNum = document.getElementById('badgeNum');
+    const questionText = document.getElementById('questionText');
+    const optionsContainer = document.getElementById('optionsContainer');
+    const feedbackBanner = document.getElementById('feedbackBanner');
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    const showAnswerBtn = document.getElementById('showAnswerBtn');
+    const questionGrid = document.getElementById('questionGrid');
+    const resetBtn = document.getElementById('resetBtn');
+    const toggleReviewBtn = document.getElementById('toggleReviewBtn');
+    const fullKeySection = document.getElementById('fullKeySection');
+    const keyContent = document.getElementById('keyContent');
+    const closeKeyBtn = document.getElementById('closeKeyBtn');
+
+    function applyFilter() {
+      const selectedWeek = weekFilter.value;
+      const query = searchInput.value.trim().toLowerCase();
+
+      filteredQuestions = questionsData.filter(item => {
+        const matchesWeek = (selectedWeek === 'all') || (item.week.toString() === selectedWeek);
+        const matchesQuery = !query || 
+          item.q.toLowerCase().includes(query) || 
+          item.options.some(opt => opt.toLowerCase().includes(query)) ||
+          item.topic.toLowerCase().includes(query);
+        return matchesWeek && matchesQuery;
+      });
+
+      if (filteredQuestions.length === 0) {
+        currentIndex = 0;
+      } else if (currentIndex >= filteredQuestions.length) {
+        currentIndex = 0;
+      }
+      renderQuestion();
+      renderGrid();
+      updateScoreboard();
+    }
+
+    function renderQuestion() {
+      if (filteredQuestions.length === 0) {
+        questionText.textContent = "No questions match your filter.";
+        optionsContainer.innerHTML = "";
+        feedbackBanner.classList.add('hidden');
+        badgeWeek.textContent = "N/A";
+        badgeNum.textContent = "0/0";
+        prevBtn.disabled = true;
+        nextBtn.disabled = true;
+        showAnswerBtn.disabled = true;
+        return;
+      }
+
+      const q = filteredQuestions[currentIndex];
+      const qKey = `${q.week}_${q.id}`;
+      const answeredOption = userAnswers[qKey];
+
+      badgeWeek.textContent = `Week ${q.week}`;
+      badgeNum.textContent = `Question ${currentIndex + 1} of ${filteredQuestions.length} (${q.topic})`;
+      questionText.textContent = `${currentIndex + 1}. ${q.q}`;
+
+      optionsContainer.innerHTML = '';
+      feedbackBanner.classList.add('hidden');
+      feedbackBanner.className = 'p-4 rounded-xl text-sm font-medium border mb-6 hidden';
+
+      const letters = ['A', 'B', 'C', 'D'];
+      q.options.forEach((opt, idx) => {
+        const optBtn = document.createElement('button');
+        optBtn.className = 'w-full text-left p-3.5 rounded-xl border flex items-center justify-between text-sm transition-all duration-150 ';
+
+        let isCorrect = idx === q.answer;
+        let isSelected = answeredOption === idx;
+
+        if (answeredOption !== undefined) {
+          if (currentMode === 'practice') {
+            if (isCorrect) {
+              optBtn.className += 'bg-emerald-950/40 border-emerald-500 text-emerald-200 font-medium';
+            } else if (isSelected) {
+              optBtn.className += 'bg-red-950/40 border-red-500 text-red-200 font-medium';
+            } else {
+              optBtn.className += 'opacity-50 border-slate-700 bg-slate-900/40';
+            }
+          } else {
+            if (isSelected) {
+              optBtn.className += 'bg-blue-600/30 border-blue-500 text-blue-100 font-semibold';
+            } else {
+              optBtn.className += 'border-slate-800 bg-slate-900/60 hover:bg-slate-800';
+            }
+          }
+        } else {
+          optBtn.className += 'border-slate-800 bg-slate-900/60 hover:border-blue-500 hover:bg-slate-800/80 cursor-pointer';
+        }
+
+        optBtn.innerHTML = `
+          <div class="flex items-center gap-3">
+            <span class="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold border border-slate-700 text-slate-300">${letters[idx]}</span>
+            <span>${opt}</span>
+          </div>
+          ${(answeredOption !== undefined && currentMode === 'practice') ? (
+            isCorrect ? '<span class="text-emerald-400 font-bold">✓ Accepted</span>' : 
+            (isSelected ? '<span class="text-red-400 font-bold">✗ Incorrect</span>' : '')
+          ) : ''}
+        `;
+
+        optBtn.onclick = () => selectOption(idx);
+        optionsContainer.appendChild(optBtn);
+      });
+
+      if (answeredOption !== undefined && currentMode === 'practice') {
+        const correct = answeredOption === q.answer;
+        feedbackBanner.classList.remove('hidden');
+        if (correct) {
+          feedbackBanner.classList.add('bg-emerald-950/50', 'border-emerald-600/60', 'text-emerald-200');
+          feedbackBanner.innerHTML = `🎉 <b>Correct!</b> The accepted answer is: <i>${q.options[q.answer]}</i>`;
+        } else {
+          feedbackBanner.classList.add('bg-red-950/50', 'border-red-600/60', 'text-red-200');
+          feedbackBanner.innerHTML = `❌ <b>Incorrect.</b> The accepted answer is: <b class="text-emerald-300">${q.options[q.answer]}</b>`;
+        }
+      }
+
+      prevBtn.disabled = currentIndex === 0;
+      nextBtn.disabled = currentIndex === filteredQuestions.length - 1;
+      showAnswerBtn.disabled = false;
+
+      progressText.textContent = `Question ${currentIndex + 1} of ${filteredQuestions.length}`;
+      const pct = Math.round(((currentIndex + 1) / filteredQuestions.length) * 100);
+      progressBar.style.width = `${pct}%`;
+
+      renderGrid();
+    }
+
+    function selectOption(idx) {
+      const q = filteredQuestions[currentIndex];
+      const qKey = `${q.week}_${q.id}`;
+      userAnswers[qKey] = idx;
+      renderQuestion();
+      updateScoreboard();
+    }
+
+    function renderGrid() {
+      questionGrid.innerHTML = '';
+      filteredQuestions.forEach((q, i) => {
+        const qKey = `${q.week}_${q.id}`;
+        const answered = userAnswers[qKey];
+        const btn = document.createElement('button');
+        btn.textContent = i + 1;
+        btn.className = 'w-7 h-7 text-xs font-medium rounded transition flex items-center justify-center ';
+
+        if (i === currentIndex) {
+          btn.className += 'ring-2 ring-blue-400 scale-105 font-bold ';
+        }
+
+        if (answered !== undefined) {
+          if (currentMode === 'practice') {
+            if (answered === q.answer) {
+              btn.className += 'bg-emerald-600 text-white';
+            } else {
+              btn.className += 'bg-red-600 text-white';
+            }
+          } else {
+            btn.className += 'bg-blue-600 text-white';
+          }
+        } else {
+          btn.className += 'bg-slate-800 text-slate-400 hover:bg-slate-700';
+        }
+
+        btn.onclick = () => {
+          currentIndex = i;
+          renderQuestion();
+        };
+        questionGrid.appendChild(btn);
+      });
+    }
+
+    function updateScoreboard() {
+      let correctCount = 0;
+      let totalCount = 0;
+
+      filteredQuestions.forEach(q => {
+        const qKey = `${q.week}_${q.id}`;
+        if (userAnswers[qKey] !== undefined) {
+          totalCount++;
+          if (userAnswers[qKey] === q.answer) {
+            correctCount++;
+          }
+        }
+      });
+
+      scoreVal.textContent = correctCount;
+      totalAttempted.textContent = totalCount;
+      const pct = totalCount > 0 ? Math.round((correctCount / totalCount) * 100) : 0;
+      pctVal.textContent = `(${pct}%)`;
+    }
+
+    prevBtn.onclick = () => {
+      if (currentIndex > 0) {
+        currentIndex--;
+        renderQuestion();
+      }
+    };
+
+    nextBtn.onclick = () => {
+      if (currentIndex < filteredQuestions.length - 1) {
+        currentIndex++;
+        renderQuestion();
+      }
+    };
+
+    showAnswerBtn.onclick = () => {
+      const q = filteredQuestions[currentIndex];
+      const qKey = `${q.week}_${q.id}`;
+      userAnswers[qKey] = q.answer;
+      renderQuestion();
+      updateScoreboard();
+    };
+
+    weekFilter.onchange = applyFilter;
+    searchInput.oninput = applyFilter;
+
+    modeSelect.onchange = () => {
+      currentMode = modeSelect.value;
+      renderQuestion();
+      renderGrid();
+    };
+
+    resetBtn.onclick = () => {
+      if (confirm("Are you sure you want to reset your quiz answers?")) {
+        userAnswers = {};
+        currentIndex = 0;
+        renderQuestion();
+        updateScoreboard();
+      }
+    };
+
+    toggleReviewBtn.onclick = () => {
+      renderFullKey();
+      fullKeySection.classList.toggle('hidden');
+      if (!fullKeySection.classList.contains('hidden')) {
+        fullKeySection.scrollIntoView({ behavior: 'smooth' });
+      }
+    };
+
+    closeKeyBtn.onclick = () => {
+      fullKeySection.classList.add('hidden');
+    };
+
+    function renderFullKey() {
+      let html = '';
+      for (let w = 1; w <= 12; w++) {
+        const weekQs = questionsData.filter(q => q.week === w);
+        html += `
+          <div class="border rounded-xl p-4 bg-slate-900/50" style="border-color: var(--border-color);">
+            <h4 class="font-bold text-blue-400 mb-3 text-base">Week ${w} Assignment Key</h4>
+            <div class="space-y-2">
+        `;
+        weekQs.forEach((item, i) => {
+          html += `
+            <div class="text-xs pb-2 border-b border-slate-800/80">
+              <span class="font-semibold text-slate-300">${i + 1}. ${item.q}</span><br>
+              <span class="text-emerald-400 font-medium">✓ Accepted: ${item.options[item.answer]}</span>
+            </div>
+          `;
+        });
+        html += `</div></div>`;
+      }
+      keyContent.innerHTML = html;
+    }
+
+    applyFilter();
+  </script>
+</body>
+</html>
