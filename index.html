@@ -35,7 +35,6 @@
       margin: 0;
       padding: 0;
     }
-    /* Fallback basic styles if CDN doesn't load offline */
     button { cursor: pointer; }
     select, input, button { font-family: inherit; }
   </style>
@@ -50,20 +49,23 @@
           <span>🎓</span> NPTEL / HCI Complete Course
         </div>
         <h1 class="text-2xl sm:text-3xl font-bold tracking-tight">HCI Master Quiz App</h1>
-        <p class="text-sm text-slate-400 mt-1">120 Questions across Weeks 1 – 12 • Practice & Test Modes</p>
+        <p class="text-sm text-slate-400 mt-1">120 Questions across Weeks 1 – 12 • Practice, Exam & Random Modes</p>
       </div>
       <div class="flex items-center gap-2">
+        <button id="quickRandomBtn" class="px-3.5 py-1.5 text-xs font-medium rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white transition shadow-sm">
+          🎲 Quick Random Quiz
+        </button>
         <button id="resetBtn" class="px-3.5 py-1.5 text-xs font-medium rounded-lg border hover:bg-slate-800 transition" style="border-color: var(--border-color);">
-          🔄 Reset Quiz
+          🔄 Reset
         </button>
         <button id="toggleReviewBtn" class="px-3.5 py-1.5 text-xs font-medium rounded-lg bg-blue-600 text-white hover:bg-blue-500 transition shadow-sm">
-          📋 Summary Key
+          📋 Key
         </button>
       </div>
     </header>
 
     <!-- Controls Bar -->
-    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6 p-4 rounded-xl border" style="background-color: var(--card-bg); border-color: var(--border-color);">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-3 p-4 rounded-xl border" style="background-color: var(--card-bg); border-color: var(--border-color);">
       <div>
         <label class="block text-xs font-medium text-slate-400 mb-1">Select Module / Week</label>
         <select id="weekFilter" class="w-full text-sm rounded-lg p-2 bg-slate-900 border focus:ring-2 focus:ring-blue-500 text-slate-200" style="border-color: var(--border-color);">
@@ -92,8 +94,35 @@
       </div>
 
       <div>
+        <label class="block text-xs font-medium text-slate-400 mb-1">Question Order / Random</label>
+        <select id="randomSelect" class="w-full text-sm rounded-lg p-2 bg-slate-900 border focus:ring-2 focus:ring-blue-500 text-slate-200" style="border-color: var(--border-color);">
+          <option value="normal">Normal (Sequential)</option>
+          <option value="random-all">🔀 Random (All Shuffled)</option>
+          <option value="random-10">🔀 Random 10 (Quick Sprint)</option>
+          <option value="random-25">🔀 Random 25 (Standard Practice)</option>
+          <option value="random-50">🔀 Random 50 (Mock Exam)</option>
+        </select>
+      </div>
+
+      <div>
         <label class="block text-xs font-medium text-slate-400 mb-1">Quick Search / Topic</label>
-        <input type="text" id="searchInput" placeholder="e.g. Norman, GDPR, Prototyping..." class="w-full text-sm rounded-lg p-2 bg-slate-900 border focus:ring-2 focus:ring-blue-500 text-slate-200 placeholder-slate-500" style="border-color: var(--border-color);">
+        <input type="text" id="searchInput" placeholder="e.g. Norman, GDPR..." class="w-full text-sm rounded-lg p-2 bg-slate-900 border focus:ring-2 focus:ring-blue-500 text-slate-200 placeholder-slate-500" style="border-color: var(--border-color);">
+      </div>
+    </div>
+
+    <!-- Random & Extra Options Sub-Bar -->
+    <div class="flex flex-wrap items-center justify-between gap-3 mb-6 px-4 py-2.5 rounded-xl border text-xs" style="background-color: var(--card-bg); border-color: var(--border-color);">
+      <div class="flex flex-wrap items-center gap-3">
+        <button id="reshuffleBtn" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-medium transition shadow-sm">
+          <span>🔀</span> Reshuffle Order
+        </button>
+        <label class="inline-flex items-center gap-2 cursor-pointer text-slate-300 hover:text-white select-none">
+          <input type="checkbox" id="shuffleOptionsToggle" class="rounded border-slate-700 bg-slate-900 text-blue-600 focus:ring-blue-500">
+          <span>Shuffle Options (A, B, C, D)</span>
+        </label>
+      </div>
+      <div id="randomStatusBadge" class="hidden text-xs px-2.5 py-1 rounded-md bg-purple-900/40 text-purple-300 border border-purple-700/50 font-medium">
+        🎲 Random Mode Active
       </div>
     </div>
 
@@ -234,7 +263,7 @@
       { week: 5, id: 7, q: "A disadvantage of direct manipulation is:", options: ["Difficult for experts", "Can consume screen space", "No interaction", "No visual elements"], answer: 1, topic: "Direct Manipulation Tradeoffs" },
       { week: 5, id: 8, q: "CLI is mainly suitable for:", options: ["Beginners", "Expert users", "Children only", "Casual users"], answer: 1, topic: "Command Line Interfaces" },
       { week: 5, id: 9, q: "Paradigms in HCI refer to:", options: ["Coding techniques", "Shared approaches and practices", "UI layouts", "Data structures"], answer: 1, topic: "HCI Paradigms" },
-      { week: 5, id: 10, q: "A major limitation of interface metaphors is:", options: ["Improves usability", "Limits design creativity", "Reduces learning", "Enhances flexibility"], answer: 1, topic: "Interface Metaphors" },
+      { week: 10, id: 10, q: "A major limitation of interface metaphors is:", options: ["Improves usability", "Limits design creativity", "Reduces learning", "Enhances flexibility"], answer: 1, topic: "Interface Metaphors" },
 
       // Week 6
       { week: 6, id: 1, q: "Data in HCI is mainly used for:", options: ["Hardware optimization", "Understanding user needs", "Coding interfaces", "Database storage"], answer: 1, topic: "HCI Data Usage" },
@@ -321,6 +350,15 @@
       { week: 12, id: 10, q: "A limitation of conversational AI systems is:", options: ["No interaction", "Perfect understanding", "Bias and incorrect responses", "No computation"], answer: 2, topic: "Conversational AI Limitations" }
     ];
 
+    function shuffleArray(arr) {
+      const copy = [...arr];
+      for (let i = copy.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [copy[i], copy[j]] = [copy[j], copy[i]];
+      }
+      return copy;
+    }
+
     // State
     let filteredQuestions = [...questionsData];
     let currentIndex = 0;
@@ -330,7 +368,13 @@
     // Elements
     const weekFilter = document.getElementById('weekFilter');
     const modeSelect = document.getElementById('modeSelect');
+    const randomSelect = document.getElementById('randomSelect');
     const searchInput = document.getElementById('searchInput');
+    const reshuffleBtn = document.getElementById('reshuffleBtn');
+    const quickRandomBtn = document.getElementById('quickRandomBtn');
+    const shuffleOptionsToggle = document.getElementById('shuffleOptionsToggle');
+    const randomStatusBadge = document.getElementById('randomStatusBadge');
+
     const progressText = document.getElementById('progressText');
     const scoreVal = document.getElementById('scoreVal');
     const totalAttempted = document.getElementById('totalAttempted');
@@ -351,11 +395,13 @@
     const keyContent = document.getElementById('keyContent');
     const closeKeyBtn = document.getElementById('closeKeyBtn');
 
-    function applyFilter() {
+    function applyFilter(resetIndex = true) {
       const selectedWeek = weekFilter.value;
       const query = searchInput.value.trim().toLowerCase();
+      const randomMode = randomSelect.value;
+      const shuffleOptions = shuffleOptionsToggle.checked;
 
-      filteredQuestions = questionsData.filter(item => {
+      let baseList = questionsData.filter(item => {
         const matchesWeek = (selectedWeek === 'all') || (item.week.toString() === selectedWeek);
         const matchesQuery = !query || 
           item.q.toLowerCase().includes(query) || 
@@ -364,11 +410,34 @@
         return matchesWeek && matchesQuery;
       });
 
-      if (filteredQuestions.length === 0) {
-        currentIndex = 0;
-      } else if (currentIndex >= filteredQuestions.length) {
+      if (randomMode !== 'normal') {
+        baseList = shuffleArray(baseList);
+        if (randomMode === 'random-10') baseList = baseList.slice(0, 10);
+        else if (randomMode === 'random-25') baseList = baseList.slice(0, 25);
+        else if (randomMode === 'random-50') baseList = baseList.slice(0, 50);
+
+        randomStatusBadge.classList.remove('hidden');
+        randomStatusBadge.textContent = `🎲 Random Mode (${baseList.length} Questions)`;
+      } else {
+        randomStatusBadge.classList.add('hidden');
+      }
+
+      // Option Shuffling
+      filteredQuestions = baseList.map(item => {
+        let displayOpts = item.options.map((text, origIdx) => ({ text, origIdx }));
+        if (shuffleOptions) {
+          displayOpts = shuffleArray(displayOpts);
+        }
+        return {
+          ...item,
+          displayOptions: displayOpts
+        };
+      });
+
+      if (resetIndex || currentIndex >= filteredQuestions.length) {
         currentIndex = 0;
       }
+
       renderQuestion();
       renderGrid();
       updateScoreboard();
@@ -392,7 +461,7 @@
       const answeredOption = userAnswers[qKey];
 
       badgeWeek.textContent = `Week ${q.week}`;
-      badgeNum.textContent = `Question ${currentIndex + 1} of ${filteredQuestions.length} (${q.topic})`;
+      badgeNum.textContent = `Question ${currentIndex + 1} of ${filteredQuestions.length} • ${q.topic}`;
       questionText.textContent = `${currentIndex + 1}. ${q.q}`;
 
       optionsContainer.innerHTML = '';
@@ -400,12 +469,14 @@
       feedbackBanner.className = 'p-4 rounded-xl text-sm font-medium border mb-6 hidden';
 
       const letters = ['A', 'B', 'C', 'D'];
-      q.options.forEach((opt, idx) => {
+      const currentOpts = q.displayOptions || q.options.map((text, origIdx) => ({ text, origIdx }));
+
+      currentOpts.forEach((optObj, idx) => {
         const optBtn = document.createElement('button');
         optBtn.className = 'w-full text-left p-3.5 rounded-xl border flex items-center justify-between text-sm transition-all duration-150 ';
 
-        let isCorrect = idx === q.answer;
-        let isSelected = answeredOption === idx;
+        let isCorrect = optObj.origIdx === q.answer;
+        let isSelected = answeredOption === optObj.origIdx;
 
         if (answeredOption !== undefined) {
           if (currentMode === 'practice') {
@@ -430,7 +501,7 @@
         optBtn.innerHTML = `
           <div class="flex items-center gap-3">
             <span class="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold border border-slate-700 text-slate-300">${letters[idx]}</span>
-            <span>${opt}</span>
+            <span>${optObj.text}</span>
           </div>
           ${(answeredOption !== undefined && currentMode === 'practice') ? (
             isCorrect ? '<span class="text-emerald-400 font-bold">✓ Accepted</span>' : 
@@ -438,7 +509,7 @@
           ) : ''}
         `;
 
-        optBtn.onclick = () => selectOption(idx);
+        optBtn.onclick = () => selectOption(optObj.origIdx);
         optionsContainer.appendChild(optBtn);
       });
 
@@ -465,10 +536,10 @@
       renderGrid();
     }
 
-    function selectOption(idx) {
+    function selectOption(origIdx) {
       const q = filteredQuestions[currentIndex];
       const qKey = `${q.week}_${q.id}`;
-      userAnswers[qKey] = idx;
+      userAnswers[qKey] = origIdx;
       renderQuestion();
       updateScoreboard();
     }
@@ -550,13 +621,35 @@
       updateScoreboard();
     };
 
-    weekFilter.onchange = applyFilter;
-    searchInput.oninput = applyFilter;
+    weekFilter.onchange = () => applyFilter(true);
+    searchInput.oninput = () => applyFilter(true);
 
     modeSelect.onchange = () => {
       currentMode = modeSelect.value;
       renderQuestion();
       renderGrid();
+    };
+
+    randomSelect.onchange = () => {
+      applyFilter(true);
+    };
+
+    reshuffleBtn.onclick = () => {
+      if (randomSelect.value === 'normal') {
+        randomSelect.value = 'random-all';
+      }
+      applyFilter(true);
+    };
+
+    quickRandomBtn.onclick = () => {
+      randomSelect.value = 'random-25';
+      weekFilter.value = 'all';
+      searchInput.value = '';
+      applyFilter(true);
+    };
+
+    shuffleOptionsToggle.onchange = () => {
+      applyFilter(false);
     };
 
     resetBtn.onclick = () => {
